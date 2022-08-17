@@ -53,6 +53,7 @@ from astypes import get_type
 
     # methos of builtins
     ('"".join(x)', 'str'),
+    ('[1,2].count(1)', 'int'),
 
     # builtin functions
     ('len(x)', 'int'),
