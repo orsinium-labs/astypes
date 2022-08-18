@@ -21,7 +21,13 @@ T = TypeVar('T', bound=Handler)
 class Handlers:
     _registry: list[tuple[type, Handler]] = field(default_factory=list)
 
-    def node_to_type(self, node: astroid.NodeNG) -> Type | None:
+    def get_type(self, node: astroid.NodeNG) -> Type | None:
+        """Infer type of the given astroid node.
+
+        If the type cannot be inferred, None is returned.
+        Keep in mind that a number of assumptions can be made about the code
+        in order to infer the type. Use `Type.assumptions` to see them.
+        """
         for supported_type, handler in self._registry:
             if isinstance(node, supported_type):
                 result = handler(node)
@@ -37,7 +43,7 @@ class Handlers:
 
 
 handlers = Handlers()
-get_type = handlers.node_to_type
+get_type = handlers.get_type
 
 
 @handlers.register(astroid.Const)

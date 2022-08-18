@@ -7,7 +7,8 @@ class Ass(Enum):
     """Assumptions about the types that might be not true but usually are true.
     """
     # cannot infer type of one or more of the return statements,
-    # assume all return statements to have the same type
+    # assume all return statements to have the same type.
+    # It is here for the sake of infer-types.
     ALL_RETURNS_SAME = 'all-returns-same'
     # assume that comparison operations aren't overloaded
     NO_COMP_OVERLOAD = 'no-comp-overload'

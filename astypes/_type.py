@@ -13,6 +13,10 @@ UNION = 'Union'
 
 @dataclass(frozen=True)
 class Type:
+    """The type of a Python expression.
+
+    It is currently limited to what can be represented by type annotations.
+    """
     _name: str
     _args: list[Type]
     _ass: set[Ass]
@@ -35,18 +39,33 @@ class Type:
 
     @property
     def name(self) -> str:
+        """The name of the type.
+
+        For example, `Iterable` or `list`.
+        """
         return self._name
 
     @property
     def args(self) -> tuple[Type, ...]:
+        """Arguments of a generic type if any.
+
+        For example, `(str, int)` if the type is `dict[str, int]`.
+        """
         return tuple(self._args)
 
     @property
     def module(self) -> str:
+        """The module where the type is defined.
+
+        For example, `typing` if the type is `Iterable`.
+        Empty string for built-ins.
+        """
         return self._module
 
     @cached_property
     def imports(self) -> frozenset[str]:
+        """Import statements required to define the type.
+        """
         result = set()
         if self._module:
             result.add(f'from {self.module} import {self._name}')
@@ -56,6 +75,8 @@ class Type:
 
     @cached_property
     def assumptions(self) -> frozenset[Ass]:
+        """Assumptions that were made when inferring the type.
+        """
         result = set()
         result.update(self._ass)
         for arg in self._args:
@@ -63,11 +84,20 @@ class Type:
         return frozenset(result)
 
     @property
-    def empty(self) -> bool:
+    def unknown(self) -> bool:
+        """
+        infer-types can create Type with empty name.
+        It is used to denote an unknown type.
+        """
         return not self._name
 
     @cached_property
     def signature(self) -> str:
+        """Represent the type as a string suitable for type annotations.
+
+        The string is a valid Python 3.10 expression.
+        For example, `str | dict[str, Any]`.
+        """
         if self.name == UNION:
             return ' | '.join(arg.signature for arg in self._args)
         if self._args:
@@ -76,9 +106,13 @@ class Type:
         return self._name
 
     def merge(self, other: Type) -> Type:
-        if self.empty:
+        """Returns a union of the two given types.
+
+        If any of the types is unknown, the other is returned.
+        """
+        if self.unknown:
             return other
-        if other.empty:
+        if other.unknown:
             return self
         return type(self).new(
             name=UNION,
