@@ -18,10 +18,9 @@ def qname_to_type(qname: str) -> Type:
     if qname == 'NoneType':
         qname = 'None'
     if '.' not in qname:
-        return Type(qname)
+        return Type.new(qname)
     mod_name, _, obj_name = qname.rpartition('.')
-    imp = f'from {mod_name} import {obj_name}'
-    return Type(obj_name, imp={imp})
+    return Type.new(obj_name, module=mod_name)
 
 
 def is_camel(name: str) -> bool:

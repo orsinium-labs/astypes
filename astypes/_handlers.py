@@ -42,42 +42,42 @@ get_type = handlers.node_to_type
 @handlers.register(astroid.Const)
 def _handle_const(node: astroid.Const) -> Type | None:
     if node.value is None:
-        return Type('None')
-    return Type(type(node.value).__name__)
+        return Type.new('None')
+    return Type.new(type(node.value).__name__)
 
 
 @handlers.register(astroid.JoinedStr)
 def _handle_fstring(node: astroid.JoinedStr) -> Type | None:
-    return Type('str')
+    return Type.new('str')
 
 
 @handlers.register(astroid.List)
 def _handle_list(node: astroid.List) -> Type | None:
-    return Type('list')
+    return Type.new('list')
 
 
 @handlers.register(astroid.Tuple)
 def _handle_tuple(node: astroid.Tuple) -> Type | None:
-    return Type('tuple')
+    return Type.new('tuple')
 
 
 @handlers.register(astroid.Dict)
 def _handle_dict(node: astroid.Dict) -> Type | None:
-    return Type('dict')
+    return Type.new('dict')
 
 
 @handlers.register(astroid.Set)
 def _handle_set(node: astroid.Set) -> Type | None:
-    return Type('set')
+    return Type.new('set')
 
 
 @handlers.register(astroid.UnaryOp)
 def _handle_unary_op(node: astroid.UnaryOp) -> Type | None:
     if node.op == 'not':
-        return Type('bool')
+        return Type.new('bool')
     result = get_type(node.operand)
     if result is not None:
-        result.ass.add(Ass.NO_UNARY_OVERLOAD)
+        result = result.add_ass(Ass.NO_UNARY_OVERLOAD)
         return result
     return None
 
@@ -85,28 +85,28 @@ def _handle_unary_op(node: astroid.UnaryOp) -> Type | None:
 @handlers.register(astroid.Compare)
 def _handle_compare(node: astroid.Compare) -> Type | None:
     if node.ops[0][0] == 'is':
-        return Type('bool')
-    return Type('bool', ass={Ass.NO_COMP_OVERLOAD})
+        return Type.new('bool')
+    return Type.new('bool', ass={Ass.NO_COMP_OVERLOAD})
 
 
 @handlers.register(astroid.ListComp)
 def _handle_list_comp(node: astroid.ListComp) -> Type | None:
-    return Type('list')
+    return Type.new('list')
 
 
 @handlers.register(astroid.SetComp)
 def _handle_set_comp(node: astroid.SetComp) -> Type | None:
-    return Type('set')
+    return Type.new('set')
 
 
 @handlers.register(astroid.DictComp)
 def _handle_dict_comp(node: astroid.DictComp) -> Type | None:
-    return Type('dict')
+    return Type.new('dict')
 
 
 @handlers.register(astroid.GeneratorExp)
 def _handle_gen_expr(node: astroid.GeneratorExp) -> Type | None:
-    return Type('Iterator', imp={'from typing import Iterator'})
+    return Type.new('Iterator', module='typing')
 
 
 @handlers.register(astroid.Call)
@@ -126,7 +126,7 @@ def _handle_call(node: astroid.Call) -> Type | None:
         if result is not None:
             return result
         if is_camel(node.func.name):
-            return Type(node.func.name, ass={Ass.CAMEL_CASE_IS_TYPE})
+            return Type.new(node.func.name, ass={Ass.CAMEL_CASE_IS_TYPE})
     return None
 
 
@@ -171,14 +171,14 @@ def _get_ret_type_of_fun(
 
 
 def _get_attr_call_type(node: astroid.Attribute) -> Type | None:
-    result = get_type(node.expr)
-    if result is None:
+    expr_type = get_type(node.expr)
+    if expr_type is None:
         logger.debug('cannot get type of the left side of attribute')
         return None
     module = typeshed_client.get_stub_names('builtins')
     assert module is not None
     try:
-        method_def = module[result.rep].child_nodes[node.attrname]
+        method_def = module[expr_type.name].child_nodes[node.attrname]
     except KeyError:
         logger.debug('not a built-in function')
         return None
@@ -208,9 +208,9 @@ def _conv_node_to_type(
     if isinstance(node, ast.Name):
         name = node.id
         if hasattr(builtins, name):
-            return Type(name, ass={Ass.NO_SHADOWING})
+            return Type.new(name, ass={Ass.NO_SHADOWING})
         if name in typing.__all__:
-            return Type(name, imp={f'from typing import {name}'})
+            return Type.new(name, module='typing')
         logger.debug(f'cannot resolve {name} into a known type')
         return None
 
