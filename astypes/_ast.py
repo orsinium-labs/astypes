@@ -2,6 +2,7 @@ import ast
 from collections import deque
 from inspect import getdoc
 from typing import Iterator
+
 import astroid
 
 

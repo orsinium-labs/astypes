@@ -8,8 +8,9 @@ from typing import Callable, TypeVar
 import astroid
 import typeshed_client
 
+from ._ass import Ass
 from ._helpers import infer, is_camel, qname_to_type
-from ._types import Ass, Type
+from ._type import Type
 
 logger = getLogger(__package__)
 Handler = Callable[[astroid.NodeNG], 'Type | None']

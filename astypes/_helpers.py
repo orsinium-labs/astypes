@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import astroid
 
-from ._types import Type
+from ._type import Type
 
 
 def infer(node: astroid.NodeNG) -> list:
