@@ -89,6 +89,26 @@ def _handle_unary_op(node: astroid.UnaryOp) -> Type | None:
     return None
 
 
+@handlers.register(astroid.BinOp)
+def _handle_binary_op(node: astroid.BinOp) -> Type | None:
+    assert node.op
+    lt = get_type(node.left)
+    if lt is None:
+        return None
+    rt = get_type(node.right)
+    if rt is None:
+        return None
+    if lt.name == rt.name == 'int':
+        if node.op == '/':
+            return Type.new('float')
+        return lt
+    if lt.name in ('float', 'int') and rt.name in ('float', 'int'):
+        return Type.new('float')
+    if lt.name == rt.name:
+        return rt
+    return None
+
+
 @handlers.register(astroid.BoolOp)
 def _handle_bool_op(node: astroid.BoolOp) -> Type | None:
     return Type.new('bool')

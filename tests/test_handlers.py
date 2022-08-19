@@ -41,6 +41,14 @@ from astypes import get_type
     ('float()',     'float'),
     ('float(x)',    'float'),
 
+    # math operations
+    ('3 + 2',       'int'),
+    ('3 * 2',       'int'),
+    ('3 + 2.',      'float'),
+    ('3. + 2',      'float'),
+    ('3 / 2',       'float'),
+    ('"a" + "b"',   'str'),
+
     # operations with known type
     ('not x',       'bool'),
     ('x is str',    'bool'),

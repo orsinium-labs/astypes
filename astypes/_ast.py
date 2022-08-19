@@ -10,8 +10,6 @@ def walk(module: astroid.Module) -> Iterator[astroid.NodeNG]:
     stack = deque([module])
     while stack:
         node = stack.pop()
-        if node is None:
-            continue
         doc_node = getattr(node, 'doc_node', None)
         if doc_node is not None and doc_node is not node:
             stack.append(doc_node)
