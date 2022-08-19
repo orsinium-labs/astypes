@@ -44,6 +44,8 @@ from astypes import get_type
     # operations with known type
     ('not x',       'bool'),
     ('x is str',    'bool'),
+    ('x and y',     'bool'),
+    ('x or y',      'bool'),
 
     # operations with assumptions
     ('x in (1, 2, 3)',  'bool'),

@@ -89,6 +89,11 @@ def _handle_unary_op(node: astroid.UnaryOp) -> Type | None:
     return None
 
 
+@handlers.register(astroid.BoolOp)
+def _handle_bool_op(node: astroid.BoolOp) -> Type | None:
+    return Type.new('bool')
+
+
 @handlers.register(astroid.Compare)
 def _handle_compare(node: astroid.Compare) -> Type | None:
     if node.ops[0][0] == 'is':
