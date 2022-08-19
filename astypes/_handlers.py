@@ -12,6 +12,7 @@ from ._ass import Ass
 from ._helpers import infer, is_camel, qname_to_type
 from ._type import Type
 
+
 logger = getLogger(__package__)
 Handler = Callable[[astroid.NodeNG], 'Type | None']
 T = TypeVar('T', bound=Handler)

@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from functools import cached_property
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from ._ass import Ass
 
@@ -91,17 +92,23 @@ class Type:
         """
         return not self._name
 
-    @cached_property
+    @property
     def signature(self) -> str:
+        """Alias for `Type.annotation`.
+        """
+        return self.annotation
+
+    @cached_property
+    def annotation(self) -> str:
         """Represent the type as a string suitable for type annotations.
 
         The string is a valid Python 3.10 expression.
         For example, `str | dict[str, Any]`.
         """
         if self.name == UNION:
-            return ' | '.join(arg.signature for arg in self._args)
+            return ' | '.join(arg.annotation for arg in self._args)
         if self._args:
-            args = ', '.join(arg.signature for arg in self._args)
+            args = ', '.join(arg.annotation for arg in self._args)
             return f'{self._name}[{args}]'
         return self._name
 

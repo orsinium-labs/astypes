@@ -77,7 +77,7 @@ def test_expr(expr, type):
     node = astroid.extract_node(f'None\n{expr}')
     t = get_type(node)
     assert t is not None
-    assert t.signature == type
+    assert t.annotation == type
 
 
 @pytest.mark.parametrize('expr', [
@@ -106,4 +106,4 @@ def test_astroid_inference(tmp_path, setup, expr, type):
     node = astroid.extract_node(f'{setup}\n{expr}')
     t = get_type(node)
     assert t is not None
-    assert t.signature == type
+    assert t.annotation == type
