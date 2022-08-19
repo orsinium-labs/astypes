@@ -55,7 +55,7 @@ addopts = [
     "--cov=astypes",
     "--cov-report=html",
     "--cov-report=term-missing:skip-covered",
-    "--cov-fail-under=79",
+    "--cov-fail-under=78",
 ]
 
 [tool.coverage.report]

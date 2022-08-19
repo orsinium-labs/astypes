@@ -128,9 +128,13 @@ class Type:
             return other
         if other.unknown:
             return self
+        if self.name == 'None':
+            args = [other, self]
+        else:
+            args = [self, other]
         return type(self).new(
             name=UNION,
-            args=[self, other],
+            args=args,
         )
 
     def add_ass(self, ass: Ass) -> Type:
