@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from functools import cached_property
 from typing import TYPE_CHECKING
+
+
+try:
+    from functools import cached_property
+except ImportError:
+    cached_property = property  # type: ignore
 
 
 if TYPE_CHECKING:
@@ -31,6 +36,8 @@ class Type:
         ass: set[Ass] | None = None,
         module: str = "",
     ):
+        """Construct a new Type.
+        """
         return cls(
             _name=name,
             _args=args or [],
