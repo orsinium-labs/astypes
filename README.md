@@ -27,6 +27,17 @@ node_type = astype.get_node(node)
 print(node_type.annotation)
 ```
 
+Example:
+
+```python
+import astroid
+import astypes
+
+node = astroid.extract_node('1 + 2.3')
+t = astypes.get_type(node)
+print(t.annotation)  # 'float'
+```
+
 For a real-world usage example, check out [infer-types](https://github.com/orsinium-labs/infer-types). It is a CLI tool that automatically adds type annotations into Python code using astypes.
 
 ## How it works
