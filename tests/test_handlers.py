@@ -72,6 +72,10 @@ from astypes import get_type
     ('[x for x in y]',      'list'),
     ('{x for x in y}',      'set'),
     ('{x: y for x in z}',   'dict'),
+    ('(x for x in y)',      'Iterator'),
+
+    # misc
+    ('Some(x)',             'Some'),
 ])
 def test_expr(expr, type):
     node = astroid.extract_node(f'None\n{expr}')
@@ -83,14 +87,22 @@ def test_expr(expr, type):
 @pytest.mark.parametrize('expr', [
     'min(x)',
     'x',
+    'X',
+    'WAT',
+    'wat()',
+    'WAT()',
     '+x',
     'x + y',
+    '1 + y',
+    'x + 1',
+    '"a" + 1',
     'str.wat',
     '"hi".wat',
     'None.hi',
     'None.hi()',
     '"hi".wat()',
     'wat.wat',
+    'super().something()',
 ])
 def test_cannot_infer_expr(expr):
     node = astroid.extract_node(expr)

@@ -55,7 +55,7 @@ addopts = [
     "--cov=astypes",
     "--cov-report=html",
     "--cov-report=term-missing:skip-covered",
-    "--cov-fail-under=78",
+    "--cov-fail-under=82",
 ]
 
 [tool.coverage.report]
@@ -63,6 +63,7 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING",
     "    pass",
+    "except ImportError:",
 ]
 
 [tool.coverage.run]
