@@ -24,9 +24,9 @@ class Type:
     It is currently limited to what can be represented by type annotations.
     """
     _name: str
-    _args: list[Type]
-    _ass: set[Ass]
-    _module: str
+    _args: list[Type]   # arguments of the type for generic types
+    _ass: set[Ass]      # assumptions that  were made to infer the type
+    _module: str        # the module where the type is defined, empty for built-ins
 
     @classmethod
     def new(
@@ -112,6 +112,8 @@ class Type:
         The string is a valid Python 3.10 expression.
         For example, `str | dict[str, Any]`.
         """
+        if self.unknown:
+            return 'Any'
         if self.name == UNION:
             return ' | '.join(arg.annotation for arg in self._args)
         if self._args:
@@ -120,14 +122,23 @@ class Type:
         return self._name
 
     def merge(self, other: Type) -> Type:
-        """Returns a union of the two given types.
+        """Get a union of the two given types.
 
         If any of the types is unknown, the other is returned.
+        When possible, the type is simplified. For instance, `int | int` will be
+        simplified to just `int`.
         """
         if self.unknown:
             return other
         if other.unknown:
             return self
+        if self.same_as(other):
+            return self
+        if {self.name, other.name} == {'int', 'float'}:
+            return type(self).new(
+                name='float',
+                ass=self._ass and other._ass,
+            )
         if self.name == 'None':
             args = [other, self]
         else:
@@ -138,4 +149,15 @@ class Type:
         )
 
     def add_ass(self, ass: Ass) -> Type:
+        """Get a copy of the Type with the given Ass added in the list of assertions.
+        """
         return replace(self, _ass=self._ass | {ass})
+
+    def same_as(self, other: Type) -> bool:
+        if self.name != other.name:
+            return False
+        if self.module != other.module:
+            return False
+        if self.args != other.args:
+            return False
+        return True
