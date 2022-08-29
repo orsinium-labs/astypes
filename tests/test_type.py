@@ -34,6 +34,11 @@ def u(*args):
     ('int',  'str',  u('int', 'str')),
     ('int',  'None', u('int', 'None')),
     ('None', 'int',  u('int', 'None')),
+
+    # unwrap nested unions
+    (u('str', 'bool'), 'int', u('str', 'bool', 'int')),
+    ('int', u('str', 'bool'), u('int', 'str', 'bool')),
+    (u('str', 'bool'), u('int', 'bytes'), u('str', 'bool', 'int', 'bytes')),
 ])
 def test_merge(left, right, result):
     if isinstance(left, str):

@@ -134,11 +134,27 @@ class Type:
             return self
         if self.same_as(other):
             return self
+
+        # int is a subtype of float
         if {self.name, other.name} == {'int', 'float'}:
             return type(self).new(
                 name='float',
                 ass=self._ass and other._ass,
             )
+
+        # if one type is already union, extend it
+        if self.name == UNION and other.name == UNION:
+            return type(self).new(
+                name=UNION,
+                args=self._args + other._args,
+                ass=self._ass | other._ass,
+            )
+        if self.name == UNION:
+            return replace(self, _args=self._args + [other])
+        if other.name == UNION:
+            return replace(other, _args=[self] + other._args)
+
+        # none goes last
         if self.name == 'None':
             args = [other, self]
         else:
