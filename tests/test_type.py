@@ -25,20 +25,22 @@ def u(*args):
     ('int',     'int',      'int'),
 
     # simplify one unknown
-    ('',    'int',  'int'),
-    ('int', '',     'int'),
-    ('',    '',     ''),
+    ('',        'int',      'int'),
+    ('int',     '',         'int'),
+    ('',        '',         ''),
 
     # actual unions
-    ('str',  'int',  u('str', 'int')),
-    ('int',  'str',  u('int', 'str')),
-    ('int',  'None', u('int', 'None')),
-    ('None', 'int',  u('int', 'None')),
+    ('str',     'int',      u('str', 'int')),
+    ('int',     'str',      u('int', 'str')),
+    ('int',     'None',     u('int', 'None')),
+    ('None',    'int',      u('int', 'None')),
 
     # unwrap nested unions
     (u('str', 'bool'), 'int', u('str', 'bool', 'int')),
     ('int', u('str', 'bool'), u('int', 'str', 'bool')),
     (u('str', 'bool'), u('int', 'bytes'), u('str', 'bool', 'int', 'bytes')),
+    (u('str', 'float'), 'int', u('str', 'float')),
+    (u('float', 'str'), 'int', u('float', 'str')),
 ])
 def test_merge(left, right, result):
     if isinstance(left, str):

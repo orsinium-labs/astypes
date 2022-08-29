@@ -105,6 +105,10 @@ class Type:
         """
         return self.annotation
 
+    @property
+    def is_union(self) -> bool:
+        return self._name == UNION
+
     @cached_property
     def annotation(self) -> str:
         """Represent the type as a string suitable for type annotations.
@@ -114,7 +118,7 @@ class Type:
         """
         if self.unknown:
             return 'Any'
-        if self.name == UNION:
+        if self.is_union:
             return ' | '.join(arg.annotation for arg in self._args)
         if self._args:
             args = ', '.join(arg.annotation for arg in self._args)
@@ -132,26 +136,21 @@ class Type:
             return other
         if other.unknown:
             return self
-        if self.same_as(other):
+        if self.supertype_of(other):
             return self
-
-        # int is a subtype of float
-        if {self.name, other.name} == {'int', 'float'}:
-            return type(self).new(
-                name='float',
-                ass=self._ass and other._ass,
-            )
+        if other.supertype_of(self):
+            return other
 
         # if one type is already union, extend it
-        if self.name == UNION and other.name == UNION:
+        if self.is_union and other.is_union:
             return type(self).new(
                 name=UNION,
                 args=self._args + other._args,
                 ass=self._ass | other._ass,
             )
-        if self.name == UNION:
+        if self.is_union:
             return replace(self, _args=self._args + [other])
-        if other.name == UNION:
+        if other.is_union:
             return replace(other, _args=[self] + other._args)
 
         # none goes last
@@ -169,7 +168,16 @@ class Type:
         """
         return replace(self, _ass=self._ass | {ass})
 
-    def same_as(self, other: Type) -> bool:
+    def supertype_of(self, other: Type) -> bool:
+        if self.name == 'float' and other.name == 'int':
+            return True
+        if self.name in ('Any', 'object'):
+            return True
+        if self.is_union:
+            for arg in self._args:
+                if arg.supertype_of(other):
+                    return True
+
         if self.name != other.name:
             return False
         if self.module != other.module:
