@@ -9,7 +9,9 @@ import astroid
 import typeshed_client
 
 from ._ass import Ass
-from ._helpers import infer, is_camel, qname_to_type
+from ._helpers import (
+    conv_node_to_type, get_ret_type_of_fun, infer, is_camel, qname_to_type,
+)
 from ._type import Type
 
 
@@ -155,7 +157,7 @@ def _handle_call(node: astroid.Call) -> Type | None:
             symbol_def = symbol_defs[0]
             if isinstance(symbol_def, astroid.ImportFrom):
                 mod_name = symbol_def.modname
-        result = _get_ret_type_of_fun(mod_name, node.func.name)
+        result = get_ret_type_of_fun(mod_name, node.func.name)
         if result is not None:
             return result
         if is_camel(node.func.name):
@@ -178,29 +180,8 @@ def _handle_call_infer(node: astroid.Call) -> Type | None:
         if not isinstance(def_node, astroid.FunctionDef):
             continue
         mod_name, _, fun_name = def_node.qname().rpartition('.')
-        return _get_ret_type_of_fun(mod_name, fun_name)
+        return get_ret_type_of_fun(mod_name, fun_name)
     return None
-
-
-def _get_ret_type_of_fun(
-    mod_name: str,
-    fun_name: str,
-) -> Type | None:
-    """For the given module and function name, get return type of the function.
-    """
-    module = typeshed_client.get_stub_names(mod_name)
-    if module is None:
-        logger.debug(f'no typeshed stubs for module {mod_name}')
-        return None
-    fun_def = module.get(fun_name)
-    if fun_def is None:
-        logger.debug('no typeshed stubs for module')
-        return None
-    if not isinstance(fun_def.ast, ast.FunctionDef):
-        logger.debug('resolved call target is not a function')
-        return None
-    ret_node = fun_def.ast.returns
-    return _conv_node_to_type(mod_name, ret_node)
 
 
 def _get_attr_call_type(node: astroid.Attribute) -> Type | None:
@@ -219,33 +200,4 @@ def _get_attr_call_type(node: astroid.Attribute) -> Type | None:
         logger.debug('resolved call target of attr is not a function')
         return None
     ret_node = method_def.ast.returns
-    return _conv_node_to_type('builtins', ret_node)
-
-
-def _conv_node_to_type(
-    mod_name: str,
-    node: ast.AST | None,
-) -> Type | None:
-    import builtins
-    import typing
-
-    if node is None:
-        logger.debug('no return type annotation for called function def')
-        return None
-
-    # fore generics, keep it generic
-    if isinstance(node, ast.Subscript):
-        return _conv_node_to_type(mod_name, node.value)
-
-    # for regular name, check if it is a typing primitive or a built-in
-    if isinstance(node, ast.Name):
-        name = node.id
-        if hasattr(builtins, name):
-            return Type.new(name, ass={Ass.NO_SHADOWING})
-        if name in typing.__all__:
-            return Type.new(name, module='typing')
-        logger.debug(f'cannot resolve {name} into a known type')
-        return None
-
-    logger.debug('cannot resolve return AST node into a known type')
-    return None
+    return conv_node_to_type('builtins', ret_node)
