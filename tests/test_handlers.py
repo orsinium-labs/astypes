@@ -61,12 +61,16 @@ from astypes import get_type
     ('~13',             'int'),
     ('+13',             'int'),
 
-    # methos of builtins
+    # methods of builtins
     ('"".join(x)',      'str'),
     ('[1,2].count(1)',  'int'),
+    ('list(x).copy()',  'list'),
+    ('[].copy()',       'list'),
+    ('[].__iter__()',   'Iterator'),
 
     # builtin functions
     ('len(x)',          'int'),
+    ('oct(20)',         'str'),
 
     # comprehensions
     ('[x for x in y]',      'list'),
@@ -103,6 +107,8 @@ def test_expr(expr, type):
     '"hi".wat()',
     'wat.wat',
     'super().something()',
+    'len(x).something()',
+    '[].__getitem__(x)',
 ])
 def test_cannot_infer_expr(expr):
     node = astroid.extract_node(expr)
@@ -110,12 +116,15 @@ def test_cannot_infer_expr(expr):
 
 
 @pytest.mark.parametrize('setup, expr, type', [
-    ('import math',             'math.sin(x)',  'float'),
-    ('from math import sin',    'sin(x)',       'float'),
-    ('my_list = list',          'my_list(x)',   'list'),
+    ('import math',                 'math.sin(x)',  'float'),
+    ('from math import sin',        'sin(x)',       'float'),
+    ('my_list = list',              'my_list(x)',   'list'),
+    ('def g(x): return 0',          'g(x)',         'int'),
+    ('def g(x) -> int: return x',   'g(x)',         'int'),
 ])
 def test_astroid_inference(tmp_path, setup, expr, type):
-    node = astroid.extract_node(f'{setup}\n{expr}')
-    t = get_type(node)
+    stmt = astroid.parse(f'{setup}\n{expr}').body[-1]
+    assert isinstance(stmt, astroid.Expr)
+    t = get_type(stmt.value)
     assert t is not None
     assert t.annotation == type

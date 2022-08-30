@@ -64,7 +64,7 @@ def get_ret_type_of_fun(
 
 def conv_node_to_type(
     mod_name: str,
-    node: ast.AST | None,
+    node: ast.AST | astroid.NodeNG | None,
 ) -> Type | None:
     """Resolve ast node representing a type annotation into a type.
     """
@@ -75,13 +75,17 @@ def conv_node_to_type(
         logger.debug('no return type annotation for called function def')
         return None
 
-    # fore generics, keep it generic
-    if isinstance(node, ast.Subscript):
+    # for generics, keep it generic
+    if isinstance(node, (ast.Subscript, astroid.Subscript)):
         return conv_node_to_type(mod_name, node.value)
 
     # for regular name, check if it is a typing primitive or a built-in
+    name: str | None = None
     if isinstance(node, ast.Name):
         name = node.id
+    if isinstance(node, astroid.Name):
+        name = node.name
+    if name is not None:
         if hasattr(builtins, name):
             return Type.new(name, ass={Ass.NO_SHADOWING})
         if name in typing.__all__:
