@@ -182,7 +182,6 @@ def _handle_call_infer(node: astroid.Call) -> Type | None:
         if not isinstance(def_node, astroid.FunctionDef):
             continue
         mod_name, _, fun_name = def_node.qname().rpartition('.')
-        print(repr(def_node.returns))
         ret_type = conv_node_to_type(mod_name, def_node.returns)
         if ret_type is not None:
             return ret_type

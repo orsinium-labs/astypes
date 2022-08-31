@@ -6,5 +6,5 @@ from ._handlers import get_type
 from ._type import Type
 
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 __all__ = ['find_node', 'get_type', 'Ass', 'Type']
