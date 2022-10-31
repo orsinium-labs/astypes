@@ -138,12 +138,12 @@ def _get_annotation(node: astroid.NodeNG) -> Type:
     return _node_annotation_map[type(node)](node)
 
 
-def get_annotation(node: astroid.NodeNG) -> Type:
+def get_annotation(node: astroid.NodeNG | None) -> Type:
     """Extract a resolvable annotation.
     Parameters:
         node: The annotation node.
     Returns:
-        A string or resovable name or expression.
+        A Type instance. Returns the unknown type if we can't make sens of the type annotation.
     """
 
     try:

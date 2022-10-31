@@ -45,7 +45,7 @@ def get_ret_type_of_fun(
     mod_name: str,
     fun_name: str,
 ) -> Type | None:
-    """For the given module and function name, get return type of the function.
+    """For the given module and function name, get return type of the function from typeshed.
     """
     module = typeshed_client.get_stub_names(mod_name)
     if module is None:
@@ -66,7 +66,9 @@ def conv_node_to_type(
     mod_name: str,
     node: ast.AST | astroid.NodeNG | None,
 ) -> Type | None:
-    """Resolve ast node representing a type annotation into a type.
+    """
+    Resolve ast node representing a type annotation into a type. 
+    Partial implementation.
     """
     import builtins
     import typing
@@ -75,7 +77,7 @@ def conv_node_to_type(
         logger.debug('no return type annotation for called function def')
         return None
 
-    # for generics, keep it generic
+    # for generics, don't keep it generic
     if isinstance(node, (ast.Subscript, astroid.Subscript)):
         return conv_node_to_type(mod_name, node.value)
 
