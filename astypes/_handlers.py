@@ -3,7 +3,8 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Union
+import inspect
 
 import astroid
 import typeshed_client
@@ -13,6 +14,8 @@ from ._helpers import (
     conv_node_to_type, get_ret_type_of_fun, infer, is_camel, qname_to_type,
 )
 from ._type import Type
+from ._ann_to_type import get_annotation
+from ._signature import signature, AstValue
 
 
 logger = getLogger(__package__)
@@ -164,6 +167,56 @@ def _handle_call(node: astroid.Call) -> Type | None:
             return Type.new(node.func.name, ass={Ass.CAMEL_CASE_IS_TYPE})
     return None
 
+@handlers.register(astroid.AssignName)
+def _handle_assign_name(node: astroid.AssignName) -> Type | None:
+    return _handle_assign(node)
+
+@handlers.register(astroid.AssignAttr)
+def _handle_assign_attr(node: astroid.AssignAttr) -> Type | None:
+    return _handle_assign(node)
+
+def _handle_assign(node:Union[astroid.AssignName, astroid.AssignAttr]) -> Type | None:
+    parent = node.parent
+    if isinstance(parent, astroid.AnnAssign):
+        # use type hints
+        ann = get_annotation(parent.annotation)
+        if not ann.unknown:
+            return ann
+    elif isinstance(parent, astroid.Assign):
+        return handlers.get_type(parent.value)
+    elif isinstance(parent, astroid.Arguments):
+        func = parent.parent
+        if not isinstance(func, (astroid.FunctionDef, astroid.AsyncFunctionDef)):
+            return None
+        # this name is defined as a function parameter, get it's type from the type hints.
+        try:
+            sig = signature(func)
+        except ValueError:
+            return None
+            # no signature, no type information
+        else:
+            param = sig.parameters.get(node.name)
+            if not param:
+                # param not found in signature
+                return None
+            annotation = param.annotation
+            if annotation is inspect.Parameter.empty:
+                return None
+            assert isinstance(annotation, AstValue)
+            ann = get_annotation(annotation.value)
+            if not ann.unknown:
+                return ann
+
+    return None
+
+@handlers.register(astroid.Name)
+def _handle_argument_name(node: astroid.Name) -> Type | None:
+    _, symbol_defs = node.lookup(node.name)
+    # keep it simple for now, only return type if the result is trivial
+    if len(symbol_defs)!=1:
+        return None
+    return handlers.get_type(symbol_defs[0])
+
 
 @handlers.register(astroid.NodeNG)
 def _handle_infer_any(node: astroid.NodeNG) -> Type | None:
@@ -182,9 +235,9 @@ def _handle_call_infer(node: astroid.Call) -> Type | None:
         if not isinstance(def_node, astroid.FunctionDef):
             continue
         mod_name, _, fun_name = def_node.qname().rpartition('.')
-        ret_type = conv_node_to_type(mod_name, def_node.returns)
-        if ret_type is not None:
-            return ret_type
+        ret_type = get_annotation(def_node.returns)
+        if not ret_type.unknown:
+            return ret_type.replace(module=mod_name)
         ret_type = get_ret_type_of_fun(mod_name, fun_name)
         if ret_type is not None:
             return ret_type
@@ -207,4 +260,5 @@ def _get_attr_call_type(node: astroid.Attribute) -> Type | None:
         logger.debug('resolved call target of attr is not a function')
         return None
     ret_node = method_def.ast.returns
+    # can't use get_annotation without astroid nodes.
     return conv_node_to_type('builtins', ret_node)

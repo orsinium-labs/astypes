@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable, Union
 
 
 try:
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 
 UNION = 'Union'
+LITERAL = 'Literal'
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,18 @@ class Type:
         For example, `Iterable` or `list`.
         """
         return self._name
+    
+    @property
+    def fullname(self) -> str:
+        """The full name of the type.
+
+        For example, `typing.Iterable` or `list` (for builtins).
+        """
+        mod = self.module
+        if mod:
+            return f"{mod}.{self.name}"
+        else:
+            return self.name
 
     @property
     def args(self) -> tuple[Type, ...]:
@@ -108,6 +121,15 @@ class Type:
     @property
     def is_union(self) -> bool:
         return self._name == UNION
+    
+    @property
+    def is_literal(self) -> bool:
+        """
+        A literal type means it's literal values can be recovered with:
+        
+        >>> value1 = astroid.parse(type.args[0].name)
+        """
+        return self._name == LITERAL
 
     @cached_property
     def annotation(self) -> str:
@@ -124,6 +146,21 @@ class Type:
             args = ', '.join(arg.annotation for arg in self._args)
             return f'{self._name}[{args}]'
         return self._name
+
+    def replace(self, *, name: str | None = None,
+        args: list[Type] | None = None,
+        ass: set[Ass] | None = None,
+        module: str | None = None,) -> Type:
+        """
+        Create a copy of the type with the updated attributes.
+        """
+        new_name = name if name is not None else self.name
+        new_args = args if args is not None else self.args
+        new_ass = ass if ass is not None else self._ass
+        new_module = module if module is not None else self.module
+
+        return Type.new(new_name, args=new_args, ass=new_ass, module=new_module)
+
 
     def merge(self, other: Type) -> Type:
         """Get a union of the two given types.
@@ -185,3 +222,26 @@ class Type:
         if self.args != other.args:
             return False
         return True
+
+
+def merge_types(types:Iterable[Type]) -> Type:
+    """
+    Get a union of the given types.
+
+    :see: `Type.merge`
+    """
+    types = list(types)
+    if len(types)==1:
+        return types[0]
+    current_type = types.pop()
+    for t in types:
+        current_type = current_type.merge(t)
+    return current_type
+
+def union(*args:Union[Type, str]):
+    new_args = []
+    for arg in args:
+        if isinstance(arg, str):
+            arg = Type.new(arg)
+        new_args.append(arg)
+    return Type.new('Union', args=new_args)

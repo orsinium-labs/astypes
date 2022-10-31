@@ -2,6 +2,7 @@ import pytest
 
 import astroid
 from astypes._ann_to_type import get_annotation
+from astypes._handlers import get_type
 
 @pytest.mark.parametrize(
         ("source", "expected"), 
@@ -18,6 +19,9 @@ from astypes._ann_to_type import get_annotation
 def test_annoation_to_type(source:str, expected:str) -> None:
     mod = astroid.parse(source)
     type_annotation = get_annotation(mod.body[-1].annotation)
+    type_annotation_method2 = get_type(mod.getattr('var')[-1])
+    
+    assert type_annotation == type_annotation_method2
     assert not type_annotation.unknown
     imports = '\n'.join(type_annotation.imports)
     annotation, imports_contains = expected

@@ -1,6 +1,7 @@
+from typing import List
 import astroid
 import pytest
-from astypes import get_type
+from astypes import get_type, Type, merge_types
 
 
 @pytest.mark.parametrize('expr, type', [
@@ -128,3 +129,47 @@ def test_astroid_inference(tmp_path, setup, expr, type):
     t = get_type(stmt.value)
     assert t is not None
     assert t.annotation == type
+
+
+def _getattr_type(node:astroid.NodeNG, attr:str) -> Type:
+    return merge_types([get_type(n) for n in node.getattr(attr) if get_type(n) is not None])
+
+def test_infer_types_of_variables_from_args():
+    src = '''\
+        def minimum(lst:list[int])-> int:
+            _list = lst # <- this value has type list[int], obviously.
+        '''
+    astroid_mod = astroid.parse(src)
+    list_statement = astroid_mod['minimum'].body[-1].value
+    assert get_type(list_statement).annotation == 'list[int]'
+
+def test_infer_types_of_attributes():
+    src = '''\
+    class C:
+        def __init__(self, x:str, y:int|None) -> None:
+            self.x = x # type of 'x' should be str
+            if z and y:
+                self.y = y # type of 'y' should be 'int|None'
+            else:
+                self.y = 42
+    '''
+
+    astroid_mod = astroid.parse(src)
+    cls = astroid_mod['C']
+    instance = cls.instantiate_class()
+
+    self_assign1_statement = astroid_mod['C']['__init__'].body[0].value
+    assert get_type(self_assign1_statement).annotation == 'str'
+    
+    # some understanding checks
+    attr_x = instance.getattr('x')[0]
+    assert isinstance(attr_x, astroid.AssignAttr)
+    assert get_type(attr_x).annotation == 'str'
+    attr_x_value = attr_x.parent.value
+    assert self_assign1_statement == attr_x_value
+    
+    x_types = _getattr_type(instance, 'x')
+    y_types = _getattr_type(instance, 'y')
+
+    assert x_types.annotation == 'str'
+    assert y_types.annotation == 'int | None'
