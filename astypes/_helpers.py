@@ -77,7 +77,7 @@ def conv_node_to_type(
         logger.debug('no return type annotation for called function def')
         return None
 
-    # for generics, don't keep it generic
+    # for generics, keep it generic
     if isinstance(node, (ast.Subscript, astroid.Subscript)):
         return conv_node_to_type(mod_name, node.value)
 
