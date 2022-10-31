@@ -8,4 +8,4 @@ from ._signature import signature
 
 
 __version__ = '0.2.2'
-__all__ = ['find_node', 'get_type', 'merge_types', 'signature', 'Ass', 'Type']
+__all__ = ['find_node', 'get_type', 'signature', 'Ass', 'Type']

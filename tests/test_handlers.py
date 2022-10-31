@@ -1,7 +1,8 @@
 from typing import List
 import astroid
 import pytest
-from astypes import get_type, Type, merge_types
+from astypes import get_type, Type
+from astypes._type import merge_types
 
 
 @pytest.mark.parametrize('expr, type', [
