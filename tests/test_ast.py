@@ -13,6 +13,7 @@ UNSUPPORTED = (
     ast.alias, ast.expr_context,
     ast.arguments, ast.cmpop, ast.operator,
     ast.boolop, ast.unaryop, ast.comprehension,
+    ast.keyword, ast.Index,  # Python <3.9
 )
 
 
