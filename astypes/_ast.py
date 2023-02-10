@@ -22,7 +22,7 @@ def find_node(module: astroid.Module, ast_node: ast.AST) -> astroid.NodeNG:
         return module
     matches = []
     for node in walk(module):
-        if node.lineno != ast_node.lineno:
+        if node.lineno != getattr(ast_node, 'lineno', -1):
             continue
         if node.col_offset != ast_node.col_offset:
             continue
