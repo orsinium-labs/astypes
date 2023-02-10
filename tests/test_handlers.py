@@ -123,9 +123,23 @@ def test_cannot_infer_expr(expr):
     ('def g(x): return 0',          'g(x)',         'int'),
     ('def g(x) -> int: return x',   'g(x)',         'int'),
 ])
-def test_astroid_inference(tmp_path, setup, expr, type):
+def test_astroid_inference(setup, expr, type):
     stmt = astroid.parse(f'{setup}\n{expr}').body[-1]
     assert isinstance(stmt, astroid.Expr)
     t = get_type(stmt.value)
     assert t is not None
     assert t.annotation == type
+
+
+def test_infer_type_from_signature():
+    given = """
+        def f(a: list[str]):
+            return a
+    """
+    func = astroid.parse(given).body[-1]
+    assert isinstance(func, astroid.FunctionDef)
+    stmt = func.body[-1]
+    assert isinstance(stmt, astroid.Return)
+    t = get_type(stmt)
+    assert t is not None
+    assert t.annotation == 'list'

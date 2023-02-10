@@ -66,7 +66,7 @@ def conv_node_to_type(
     mod_name: str,
     node: ast.AST | astroid.NodeNG | None,
 ) -> Type | None:
-    """Resolve ast node representing a type annotation into a type.
+    """Resolve AST node representing a type annotation into a type.
     """
     import builtins
     import typing
@@ -94,4 +94,13 @@ def conv_node_to_type(
         return None
 
     logger.debug('cannot resolve return AST node into a known type')
+    return None
+
+
+def get_parent_function(node: astroid.NodeNG) -> astroid.FunctionDef | None:
+    """Find the node of the function that contains the given node.
+    """
+    for parent in node.node_ancestors():
+        if isinstance(parent, astroid.FunctionDef):
+            return parent
     return None

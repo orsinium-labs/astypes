@@ -11,6 +11,7 @@ import typeshed_client
 from ._ass import Ass
 from ._helpers import (
     conv_node_to_type, get_ret_type_of_fun, infer, is_camel, qname_to_type,
+    get_parent_function,
 )
 from ._type import Type
 
@@ -47,6 +48,11 @@ class Handlers:
 
 handlers = Handlers()
 get_type = handlers.get_type
+
+
+@handlers.register(astroid.Return)
+def _handle_return(node: astroid.Return) -> Type | None:
+    return get_type(node.value)
 
 
 @handlers.register(astroid.Const)
@@ -162,6 +168,27 @@ def _handle_call(node: astroid.Call) -> Type | None:
             return result
         if is_camel(node.func.name):
             return Type.new(node.func.name, ass={Ass.CAMEL_CASE_IS_TYPE})
+    return None
+
+
+@handlers.register(astroid.Name)
+def _handle_annotated_attribute(node: astroid.Name) -> Type | None:
+    """
+    If the node is a name of an annotated function argument,
+    use that annotation.
+    """
+    func_node = get_parent_function(node)
+    if func_node is None:
+        return None
+    args = func_node.args
+    ann: astroid.NodeNG
+    for arg, ann in zip(args.args, args.annotations):
+        if arg.name != node.name:
+            continue
+        result = conv_node_to_type('__main__', ann)
+        if result is None:
+            return None
+        return result.add_ass(Ass.NO_REDEF)
     return None
 
 
