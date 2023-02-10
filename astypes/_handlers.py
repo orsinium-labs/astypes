@@ -199,7 +199,9 @@ def _get_attr_call_type(node: astroid.Attribute) -> Type | None:
     module = typeshed_client.get_stub_names('builtins')
     assert module is not None
     try:
-        method_def = module[expr_type.name].child_nodes[node.attrname]
+        child_nodes = module[expr_type.name].child_nodes
+        assert child_nodes is not None
+        method_def = child_nodes[node.attrname]
     except KeyError:
         logger.debug('not a built-in function')
         return None

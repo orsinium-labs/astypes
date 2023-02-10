@@ -7,6 +7,8 @@ import astroid
 
 
 def walk(module: astroid.Module) -> Iterator[astroid.NodeNG]:
+    """Recursively iterate over all nodes in the given astroid module.
+    """
     stack = deque([module])
     while stack:
         node = stack.pop()
@@ -18,6 +20,8 @@ def walk(module: astroid.Module) -> Iterator[astroid.NodeNG]:
 
 
 def find_node(module: astroid.Module, ast_node: ast.AST) -> astroid.NodeNG:
+    """Find astroid node matching the given AST node.
+    """
     if isinstance(ast_node, ast.Module):
         return module
     matches = []

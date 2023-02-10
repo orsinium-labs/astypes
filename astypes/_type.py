@@ -34,7 +34,7 @@ class Type:
         name: str, *,
         args: list[Type] | None = None,
         ass: set[Ass] | None = None,
-        module: str = "",
+        module: str = '',
     ):
         """Construct a new Type.
         """
