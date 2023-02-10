@@ -131,9 +131,24 @@ def test_astroid_inference(setup, expr, type):
     assert t.annotation == type
 
 
-def test_infer_type_from_signature():
-    given = """
-        def f(a: list[str]):
+@pytest.mark.parametrize('sig, type', [
+    ('a: int', 'int'),
+    ('b, a: int, c', 'int'),
+    ('b: float, a: int, c: float', 'int'),
+    ('*, a: int', 'int'),
+    ('a: int, /', 'int'),
+    ('a: list', 'list'),
+    ('*a: int', 'tuple[int]'),
+    ('*a: garbage', 'tuple'),
+    ('*a', 'tuple'),
+    ('**a: int', 'dict[str, int]'),
+    ('**a: garbage', 'dict[str, Any]'),
+    ('**a', 'dict[str, Any]'),
+    # ('a: list[str]', 'list[str]'),
+])
+def test_infer_type_from_signature(sig, type):
+    given = f"""
+        def f({sig}):
             return a
     """
     func = astroid.parse(given).body[-1]
@@ -142,4 +157,24 @@ def test_infer_type_from_signature():
     assert isinstance(stmt, astroid.Return)
     t = get_type(stmt)
     assert t is not None
-    assert t.annotation == 'list'
+    assert t.annotation == type
+
+
+@pytest.mark.parametrize('sig', [
+    '',
+    'b',
+    'b: int',
+    'a',
+    'a: garbage',
+])
+def test_cannot_infer_type_from_signature(sig):
+    given = f"""
+        def f({sig}):
+            return a
+    """
+    func = astroid.parse(given).body[-1]
+    assert isinstance(func, astroid.FunctionDef)
+    stmt = func.body[-1]
+    assert isinstance(stmt, astroid.Return)
+    t = get_type(stmt)
+    assert t is None

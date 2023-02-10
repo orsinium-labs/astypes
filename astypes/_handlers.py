@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass, field
+from itertools import chain
 from logging import getLogger
-from typing import Callable, TypeVar
+from typing import Callable, Iterator, TypeVar
 
 import astroid
 import typeshed_client
@@ -181,14 +182,39 @@ def _handle_annotated_attribute(node: astroid.Name) -> Type | None:
     if func_node is None:
         return None
     args = func_node.args
-    ann: astroid.NodeNG
-    for arg, ann in zip(args.args, args.annotations):
+    anns: Iterator[tuple[astroid.AssignName, astroid.NodeNG]] = chain(
+        zip(args.args, args.annotations),
+        zip(args.posonlyargs, args.posonlyargs_annotations),
+        zip(args.kwonlyargs, args.kwonlyargs_annotations),
+    )
+    for arg, ann in anns:
         if arg.name != node.name:
+            continue
+        if ann is None:
             continue
         result = conv_node_to_type('__main__', ann)
         if result is None:
             return None
         return result.add_ass(Ass.NO_REDEF)
+
+    if args.vararg is not None and args.vararg == node.name:
+        ann = args.varargannotation
+        if ann is not None:
+            result = conv_node_to_type('__main__', ann)
+            if result is not None:
+                return Type.new('tuple', args=[result], ass={Ass.NO_REDEF})
+        return Type.new('tuple', ass={Ass.NO_REDEF})
+
+    if args.kwarg is not None and args.kwarg == node.name:
+        ann = args.kwargannotation
+        if ann is not None:
+            result = conv_node_to_type('__main__', ann)
+            if result is not None:
+                targs = [Type.new('str'), result]
+                return Type.new('dict', args=targs, ass={Ass.NO_REDEF})
+        targs = [Type.new('str'), Type.new('Any', module='typing')]
+        return Type.new(name='dict', args=targs, ass={Ass.NO_REDEF})
+
     return None
 
 
