@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass, field
+from itertools import chain
 from logging import getLogger
-from typing import Callable, TypeVar
+from typing import Callable, Iterator, TypeVar
 
 import astroid
 import typeshed_client
 
 from ._ass import Ass
 from ._helpers import (
-    conv_node_to_type, get_ret_type_of_fun, infer, is_camel, qname_to_type,
+    conv_node_to_type, get_parent_function, get_ret_type_of_fun, infer,
+    is_camel, qname_to_type,
 )
 from ._type import Type
 
@@ -47,6 +49,11 @@ class Handlers:
 
 handlers = Handlers()
 get_type = handlers.get_type
+
+
+@handlers.register(astroid.Return)
+def _handle_return(node: astroid.Return) -> Type | None:
+    return get_type(node.value)
 
 
 @handlers.register(astroid.Const)
@@ -162,6 +169,52 @@ def _handle_call(node: astroid.Call) -> Type | None:
             return result
         if is_camel(node.func.name):
             return Type.new(node.func.name, ass={Ass.CAMEL_CASE_IS_TYPE})
+    return None
+
+
+@handlers.register(astroid.Name)
+def _handle_annotated_attribute(node: astroid.Name) -> Type | None:
+    """
+    If the node is a name of an annotated function argument,
+    use that annotation.
+    """
+    func_node = get_parent_function(node)
+    if func_node is None:
+        return None
+    args = func_node.args
+    anns: Iterator[tuple[astroid.AssignName, astroid.NodeNG]] = chain(
+        zip(args.args, args.annotations),
+        zip(args.posonlyargs, args.posonlyargs_annotations),
+        zip(args.kwonlyargs, args.kwonlyargs_annotations),
+    )
+    for arg, ann in anns:
+        if arg.name != node.name:
+            continue
+        if ann is None:
+            continue
+        result = conv_node_to_type('__main__', ann)
+        if result is None:
+            return None
+        return result.add_ass(Ass.NO_REDEF)
+
+    if args.vararg is not None and args.vararg == node.name:
+        ann = args.varargannotation
+        if ann is not None:
+            result = conv_node_to_type('__main__', ann)
+            if result is not None:
+                return Type.new('tuple', args=[result], ass={Ass.NO_REDEF})
+        return Type.new('tuple', ass={Ass.NO_REDEF})
+
+    if args.kwarg is not None and args.kwarg == node.name:
+        ann = args.kwargannotation
+        if ann is not None:
+            result = conv_node_to_type('__main__', ann)
+            if result is not None:
+                targs = [Type.new('str'), result]
+                return Type.new('dict', args=targs, ass={Ass.NO_REDEF})
+        targs = [Type.new('str'), Type.new('Any', module='typing')]
+        return Type.new(name='dict', args=targs, ass={Ass.NO_REDEF})
+
     return None
 
 

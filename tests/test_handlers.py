@@ -123,9 +123,67 @@ def test_cannot_infer_expr(expr):
     ('def g(x): return 0',          'g(x)',         'int'),
     ('def g(x) -> int: return x',   'g(x)',         'int'),
 ])
-def test_astroid_inference(tmp_path, setup, expr, type):
+def test_astroid_inference(setup, expr, type):
     stmt = astroid.parse(f'{setup}\n{expr}').body[-1]
     assert isinstance(stmt, astroid.Expr)
     t = get_type(stmt.value)
     assert t is not None
     assert t.annotation == type
+
+
+@pytest.mark.parametrize('sig, type', [
+    ('a: int', 'int'),
+    ('b, a: int, c', 'int'),
+    ('b: float, a: int, c: float', 'int'),
+    ('*, a: int', 'int'),
+    ('a: int, /', 'int'),
+    ('a: list', 'list'),
+
+    # *args and **kwargs
+    ('*a: int', 'tuple[int]'),
+    ('*a: garbage', 'tuple'),
+    ('*a', 'tuple'),
+    ('**a: int', 'dict[str, int]'),
+    ('**a: garbage', 'dict[str, Any]'),
+    ('**a', 'dict[str, Any]'),
+
+    # parametrized generics
+    ('a: list[str]', 'list[str]'),
+    ('a: list[garbage]', 'list'),
+    ('a: dict[str, int]', 'dict[str, int]'),
+    ('a: tuple[str, int, float]', 'tuple[str, int, float]'),
+    ('a: tuple[str, garbage]', 'tuple'),
+])
+def test_infer_type_from_signature(sig, type):
+    given = f"""
+        def f({sig}):
+            return a
+    """
+    func = astroid.parse(given).body[-1]
+    assert isinstance(func, astroid.FunctionDef)
+    stmt = func.body[-1]
+    assert isinstance(stmt, astroid.Return)
+    t = get_type(stmt)
+    assert t is not None
+    assert t.annotation == type
+
+
+@pytest.mark.parametrize('sig', [
+    '',
+    'b',
+    'b: int',
+    'a',
+    'a: garbage',
+    'a: garbage[int]',
+])
+def test_cannot_infer_type_from_signature(sig):
+    given = f"""
+        def f({sig}):
+            return a
+    """
+    func = astroid.parse(given).body[-1]
+    assert isinstance(func, astroid.FunctionDef)
+    stmt = func.body[-1]
+    assert isinstance(stmt, astroid.Return)
+    t = get_type(stmt)
+    assert t is None
