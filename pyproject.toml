@@ -28,7 +28,17 @@ keywords = [
 dependencies = ["astroid", "typeshed_client"]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+lint = [
+    "flake8",
+    "isort",
+    "mypy",
+    "types-protobuf",
+    "unify",
+]
 
 [project.urls]
 Source = "https://github.com/orsinium-labs/astypes"

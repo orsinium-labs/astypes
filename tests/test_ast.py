@@ -1,8 +1,11 @@
 import ast
 from pathlib import Path
+
 import astroid
 import pytest
+
 import astypes
+
 
 ROOT = Path(astypes.__path__[0])
 paths = [pytest.param(p, id=p.name) for p in ROOT.glob('*.py')]

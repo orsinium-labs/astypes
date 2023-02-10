@@ -1,5 +1,6 @@
 import astroid
 import pytest
+
 from astypes import get_type
 
 
