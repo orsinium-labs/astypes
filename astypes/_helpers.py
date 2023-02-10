@@ -75,9 +75,24 @@ def conv_node_to_type(
         logger.debug('no return type annotation for called function def')
         return None
 
-    # for generics, keep it generic
+    # for generics, try to convert parameters too.
     if isinstance(node, (ast.Subscript, astroid.Subscript)):
-        return conv_node_to_type(mod_name, node.value)
+        base_type = conv_node_to_type(mod_name, node.value)
+        if base_type is None:
+            return None
+        args: list[Type] = []
+        if isinstance(node.slice, (ast.Tuple, astroid.Tuple)):
+            for arg_node in node.slice.elts:
+                arg_type = conv_node_to_type(mod_name, arg_node)
+                if arg_type is None:
+                    return base_type
+                args.append(arg_type)
+        else:
+            arg_type = conv_node_to_type(mod_name, node.slice)
+            if arg_type is None:
+                return base_type
+            args.append(arg_type)
+        return base_type.add_args(args)
 
     # for regular name, check if it is a typing primitive or a built-in
     name: str | None = None

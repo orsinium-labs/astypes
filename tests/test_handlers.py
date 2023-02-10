@@ -138,13 +138,21 @@ def test_astroid_inference(setup, expr, type):
     ('*, a: int', 'int'),
     ('a: int, /', 'int'),
     ('a: list', 'list'),
+
+    # *args and **kwargs
     ('*a: int', 'tuple[int]'),
     ('*a: garbage', 'tuple'),
     ('*a', 'tuple'),
     ('**a: int', 'dict[str, int]'),
     ('**a: garbage', 'dict[str, Any]'),
     ('**a', 'dict[str, Any]'),
-    # ('a: list[str]', 'list[str]'),
+
+    # parametrized generics
+    ('a: list[str]', 'list[str]'),
+    ('a: list[garbage]', 'list'),
+    ('a: dict[str, int]', 'dict[str, int]'),
+    ('a: tuple[str, int, float]', 'tuple[str, int, float]'),
+    ('a: tuple[str, garbage]', 'tuple'),
 ])
 def test_infer_type_from_signature(sig, type):
     given = f"""
@@ -166,6 +174,7 @@ def test_infer_type_from_signature(sig, type):
     'b: int',
     'a',
     'a: garbage',
+    'a: garbage[int]',
 ])
 def test_cannot_infer_type_from_signature(sig):
     given = f"""

@@ -168,6 +168,11 @@ class Type:
         """
         return replace(self, _ass=self._ass | {ass})
 
+    def add_args(self, args: list[Type]) -> Type:
+        """Get a copy of the Type with the given args added in the list of args.
+        """
+        return replace(self, _args=self._args + args)
+
     def supertype_of(self, other: Type) -> bool:
         if self.name == 'float' and other.name == 'int':
             return True

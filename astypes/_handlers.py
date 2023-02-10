@@ -11,8 +11,8 @@ import typeshed_client
 
 from ._ass import Ass
 from ._helpers import (
-    conv_node_to_type, get_ret_type_of_fun, infer, is_camel, qname_to_type,
-    get_parent_function,
+    conv_node_to_type, get_parent_function, get_ret_type_of_fun, infer,
+    is_camel, qname_to_type,
 )
 from ._type import Type
 
