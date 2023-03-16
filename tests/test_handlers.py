@@ -131,6 +131,7 @@ def test_cannot_infer_expr(expr):
     ('def g(x): return 0',          'g(x)',         'int'),
     ('x = 13',                      'x',            'int'),
     ('x = 1\nif x:\n  x=True',      'x',            'int | bool'),
+    ('from datetime import *',      'date(1,2,3)',  'date'),
 ])
 def test_astroid_inference(setup, expr, type):
     stmt = astroid.parse(f'{setup}\n{expr}').body[-1]

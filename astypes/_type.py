@@ -15,6 +15,10 @@ if TYPE_CHECKING:
 
 
 UNION = 'Union'
+MODULE_ALIASES = {
+    '_datetime': 'datetime',
+    '_datetime.datetime': 'datetime',
+}
 
 
 @dataclass(frozen=True)
@@ -68,7 +72,7 @@ class Type:
         For example, `typing` if the type is `Iterable`.
         Empty string for built-ins.
         """
-        return self._module
+        return MODULE_ALIASES.get(self._module, self._module)
 
     @cached_property
     def imports(self) -> frozenset[str]:
