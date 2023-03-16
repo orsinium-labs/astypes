@@ -121,7 +121,14 @@ def _handle_binary_op(node: astroid.BinOp) -> Type | None:
 
 @handlers.register(astroid.BoolOp)
 def _handle_bool_op(node: astroid.BoolOp) -> Type | None:
-    return Type.new('bool')
+    assert node.op
+    result = Type.new('')
+    for subnode in node.values:
+        type = get_type(subnode)
+        if type is None:
+            return None
+        result = result.merge(type)
+    return result
 
 
 @handlers.register(astroid.Compare)
@@ -220,13 +227,19 @@ def _handle_annotated_attribute(node: astroid.Name) -> Type | None:
 
 @handlers.register(astroid.NodeNG)
 def _handle_infer_any(node: astroid.NodeNG) -> Type | None:
+    result = Type.new('')
     for def_node in infer(node):
         if not isinstance(def_node, astroid.Instance):
+            result = result.add_ass(Ass.ALL_ASSIGNS_SAME)
             continue
-        ret_type = qname_to_type(def_node.pytype())
-        if ret_type is not None:
-            return ret_type
-    return None
+        type = qname_to_type(def_node.pytype())
+        if type is None:
+            result = result.add_ass(Ass.ALL_ASSIGNS_SAME)
+            continue
+        result = result.merge(type)
+    if result.name in ('', 'None'):
+        return None
+    return result
 
 
 @handlers.register(astroid.Call)

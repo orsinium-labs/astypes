@@ -10,6 +10,9 @@ class Ass(Enum):
     # assume all return statements to have the same type.
     # It is here for the sake of infer-types.
     ALL_RETURNS_SAME = 'all-returns-same'
+    # cannot infer type of one or more of the assignment to a variable,
+    # assume all assignments to have the same type.
+    ALL_ASSIGNS_SAME = 'all-assigns-same'
     # assume that comparison operations aren't overloaded
     NO_COMP_OVERLOAD = 'no-comp-overload'
     # assume that unary operators aren't overloaded
