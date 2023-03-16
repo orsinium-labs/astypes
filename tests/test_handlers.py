@@ -17,7 +17,9 @@ from astypes import get_type
 
     # collection literals
     ('[]',      'list'),
-    ('[1]',     'list'),
+    ('[1]',     'list[int]'),
+    ('[1, 2]',  'list[int]'),
+    ('[1, ""]', 'list[int | str]'),
     ('()',      'tuple'),
     ('(1,)',    'tuple'),
     ('{}',      'dict'),

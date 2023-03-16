@@ -70,7 +70,15 @@ def _handle_fstring(node: astroid.JoinedStr) -> Type | None:
 
 @handlers.register(astroid.List)
 def _handle_list(node: astroid.List) -> Type | None:
-    return Type.new('list')
+    subtype = Type.new('')
+    for element_node in node.elts:
+        element_type = get_type(element_node)
+        if element_type is None:
+            return Type.new('list')
+        subtype = subtype.merge(element_type)
+    if subtype.unknown:
+        return Type.new('list')
+    return Type.new('list', args=[subtype])
 
 
 @handlers.register(astroid.Tuple)
