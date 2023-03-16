@@ -50,11 +50,15 @@ from astypes import get_type
     ('3 / 2',       'float'),
     ('"a" + "b"',   'str'),
 
+    # binary "bool" operations
+    ('3 and 2',     'int'),
+    ('3 or 2',      'int'),
+    ('3. and 2.',   'float'),
+    ('3. or 2.',    'float'),
+
     # operations with known type
     ('not x',       'bool'),
     ('x is str',    'bool'),
-    ('x and y',     'bool'),
-    ('x or y',      'bool'),
 
     # operations with assumptions
     ('x in (1, 2, 3)',  'bool'),
@@ -110,6 +114,8 @@ def test_expr(expr, type):
     'super().something()',
     'len(x).something()',
     '[].__getitem__(x)',
+    'x or y',
+    'x and y',
 ])
 def test_cannot_infer_expr(expr):
     node = astroid.extract_node(expr)

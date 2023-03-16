@@ -121,7 +121,14 @@ def _handle_binary_op(node: astroid.BinOp) -> Type | None:
 
 @handlers.register(astroid.BoolOp)
 def _handle_bool_op(node: astroid.BoolOp) -> Type | None:
-    return Type.new('bool')
+    assert node.op
+    result = Type.new('')
+    for subnode in node.values:
+        type = get_type(subnode)
+        if type is None:
+            return None
+        result = result.merge(type)
+    return result
 
 
 @handlers.register(astroid.Compare)
