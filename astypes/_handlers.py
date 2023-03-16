@@ -37,6 +37,7 @@ class Handlers:
             if isinstance(node, supported_type):
                 result = handler(node)
                 if result is not None:
+                    assert not result.unknown
                     return result
         return None
 
@@ -123,7 +124,14 @@ def _handle_dict(node: astroid.Dict) -> Type | None:
 
 @handlers.register(astroid.Set)
 def _handle_set(node: astroid.Set) -> Type | None:
-    return Type.new('set')
+    subtype = Type.new('')
+    for element_node in node.elts:
+        element_type = get_type(element_node)
+        if element_type is None:
+            return Type.new('set')
+        subtype = subtype.merge(element_type)
+    assert not subtype.unknown
+    return Type.new('set', args=[subtype])
 
 
 @handlers.register(astroid.UnaryOp)

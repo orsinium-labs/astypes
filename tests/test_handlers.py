@@ -34,7 +34,12 @@ from astypes import get_type
     ('{1:x,"":y}',  'dict[int | str, Any]'),
     ('{x:1,y:2}',   'dict[Any, int]'),
     ('{x:1,y:""}',  'dict[Any, int | str]'),
-    ('{1,2}',       'set'),
+    ('{1,2}',       'set[int]'),
+    ('{1,2}',       'set[int]'),
+    ('{1,x}',       'set'),
+    ('{x}',         'set'),
+    ('{x,y}',       'set'),
+    ('{1,""}',      'set[int | str]'),
 
     # collection constructors
     ('list()',      'list'),
