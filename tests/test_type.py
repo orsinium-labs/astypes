@@ -63,3 +63,41 @@ def test_merge(left, right, result):
 ])
 def test_annotation(given: Type, expected: str):
     assert given.annotation == expected
+    assert given.signature == expected
+
+
+@pytest.mark.parametrize('given, expected', [
+    (t(''), []),
+    (t('int'), []),
+    (
+        t('Iterator', module='typing'),
+        ['from typing import Iterator'],
+    ),
+    (
+        t('list', args=[t('Iterator', module='typing')]),
+        ['from typing import Iterator'],
+    ),
+    (
+        u('list', t('Iterator', module='typing')),
+        ['from typing import Iterator'],
+    ),
+])
+def test_imports(given: Type, expected: str):
+    assert given.imports == frozenset(expected)
+    assert given.assumptions == frozenset()
+
+
+@pytest.mark.parametrize('left, right, expected', [
+    (t('int'), t('int'), True),
+    (t('Any'), t('int'), True),
+    (t('object'), t('int'), True),
+    (t('float'), t('int'), True),
+    (u('int', 'str'), t('int'), True),
+    (u('str', 'int'), t('int'), True),
+
+    (t('str'), t('int'), False),
+    (t('int'), t('float'), False),
+    (u('str', 'int'), t('bytes'), False),
+])
+def test_supertype_of(left: Type, right: Type, expected: bool):
+    assert left.supertype_of(right) is expected
