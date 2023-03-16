@@ -83,7 +83,15 @@ def _handle_list(node: astroid.List) -> Type | None:
 
 @handlers.register(astroid.Tuple)
 def _handle_tuple(node: astroid.Tuple) -> Type | None:
-    return Type.new('tuple')
+    subtypes = []
+    for element_node in node.elts:
+        element_type = get_type(element_node)
+        if element_type is None:
+            return Type.new('tuple')
+        subtypes.append(element_type)
+    if not subtypes:
+        return Type.new('tuple')
+    return Type.new('tuple', args=subtypes)
 
 
 @handlers.register(astroid.Dict)
