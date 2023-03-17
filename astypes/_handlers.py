@@ -37,6 +37,7 @@ class Handlers:
             if isinstance(node, supported_type):
                 result = handler(node)
                 if result is not None:
+                    assert not result.unknown
                     return result
         return None
 
@@ -70,22 +71,67 @@ def _handle_fstring(node: astroid.JoinedStr) -> Type | None:
 
 @handlers.register(astroid.List)
 def _handle_list(node: astroid.List) -> Type | None:
-    return Type.new('list')
+    subtype = Type.new('')
+    for element_node in node.elts:
+        element_type = get_type(element_node)
+        if element_type is None:
+            return Type.new('list')
+        subtype = subtype.merge(element_type)
+    if subtype.unknown:
+        return Type.new('list')
+    return Type.new('list', args=[subtype])
 
 
 @handlers.register(astroid.Tuple)
 def _handle_tuple(node: astroid.Tuple) -> Type | None:
-    return Type.new('tuple')
+    subtypes = []
+    for element_node in node.elts:
+        element_type = get_type(element_node)
+        if element_type is None:
+            return Type.new('tuple')
+        subtypes.append(element_type)
+    if not subtypes:
+        return Type.new('tuple')
+    return Type.new('tuple', args=subtypes)
 
 
 @handlers.register(astroid.Dict)
 def _handle_dict(node: astroid.Dict) -> Type | None:
-    return Type.new('dict')
+    keys_type = Type.new('')
+    for key_node, _ in node.items:
+        key_type = get_type(key_node)
+        if key_type is None:
+            key_type = Type.new('')
+            break
+        keys_type = keys_type.merge(key_type)
+
+    values_type = Type.new('')
+    for _, value_node in node.items:
+        value_type = get_type(value_node)
+        if value_type is None:
+            value_type = Type.new('')
+            break
+        values_type = values_type.merge(value_type)
+
+    if keys_type.unknown and values_type.unknown:
+        return Type.new('dict')
+    if keys_type.unknown:
+        keys_type = Type.new('Any', module='typing')
+    if values_type.unknown:
+        values_type = Type.new('Any', module='typing')
+    return Type.new('dict', args=[keys_type, values_type])
 
 
 @handlers.register(astroid.Set)
 def _handle_set(node: astroid.Set) -> Type | None:
-    return Type.new('set')
+    subtype = Type.new('')
+    for element_node in node.elts:
+        element_type = get_type(element_node)
+        if element_type is None:
+            return Type.new('set')
+        subtype = subtype.merge(element_type)
+    assert not subtype.unknown
+    return Type.new('set', args=[subtype])
 
 
 @handlers.register(astroid.UnaryOp)
